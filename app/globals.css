@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-manrope: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-source-serif: "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+  --background: 190 75% 99%;
+  --foreground: 205 28% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 205 28% 15%;
+  --primary: 195 85% 32%;
+  --primary-foreground: 190 100% 98%;
+  --secondary: 185 32% 93%;
+  --secondary-foreground: 197 62% 25%;
+  --muted: 190 24% 92%;
+  --muted-foreground: 200 24% 37%;
+  --accent: 178 44% 90%;
+  --accent-foreground: 180 63% 20%;
+  --border: 190 24% 84%;
+  --input: 190 24% 84%;
+  --ring: 191 88% 34%;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: 207 38% 9%;
+  --foreground: 190 38% 95%;
+  --card: 210 32% 13%;
+  --card-foreground: 192 36% 94%;
+  --primary: 187 88% 44%;
+  --primary-foreground: 204 40% 10%;
+  --secondary: 208 28% 18%;
+  --secondary-foreground: 190 38% 94%;
+  --muted: 209 24% 20%;
+  --muted-foreground: 193 14% 68%;
+  --accent: 185 43% 21%;
+  --accent-foreground: 188 56% 90%;
+  --border: 209 24% 24%;
+  --input: 209 24% 24%;
+  --ring: 187 88% 44%;
+}
+
+* {
+  @apply border-border;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-background text-foreground antialiased;
+  font-family: var(--font-manrope), sans-serif;
+  background-image: var(--page-gradient);
+  background-attachment: fixed;
+}
+
+body {
+  --page-gradient: radial-gradient(circle at 10% 20%, rgba(14, 116, 144, 0.09), transparent 38%),
+    radial-gradient(circle at 85% 4%, rgba(13, 148, 136, 0.07), transparent 35%),
+    radial-gradient(circle at 52% 100%, rgba(15, 23, 42, 0.08), transparent 52%);
+}
+
+.dark body {
+  --page-gradient: radial-gradient(circle at 10% 20%, rgba(45, 212, 191, 0.14), transparent 38%),
+    radial-gradient(circle at 85% 4%, rgba(56, 189, 248, 0.12), transparent 35%),
+    radial-gradient(circle at 52% 100%, rgba(8, 47, 73, 0.24), transparent 52%);
+}
+
+@layer utilities {
+  .animate-enter {
+    animation: enter 400ms ease-out;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .print-hide {
+    display: none !important;
+  }
+
+  .print-root {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: none !important;
+  }
+}
