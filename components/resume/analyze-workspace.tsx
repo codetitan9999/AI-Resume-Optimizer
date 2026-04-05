@@ -2,12 +2,14 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Sparkles } from "lucide-react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { resumeAnalyzerService } from "@/lib/services/resume-analyzer";
 import { useResumeStore } from "@/store/use-resume-store";
 import { AnalyzeFormValues, analyzeSchema } from "@/utils/schemas";
 import { formatFileSize } from "@/utils/formatters";
+import { extractTextFromPdfFile } from "@/utils/pdf-text";
 import { useAppToast } from "@/hooks/use-app-toast";
 import {
   Card,
@@ -27,26 +29,31 @@ export function AnalyzeWorkspace() {
   const {
     uploadedFile,
     jobDescription,
+    resumeText,
     analysisResult,
     isAnalyzing,
     setUploadedFile,
     setJobDescription,
+    setResumeText,
     setAnalysisResult,
     setIsAnalyzing
   } = useResumeStore((state) => state);
 
   const toast = useAppToast();
+  const [uploadedPdf, setUploadedPdf] = useState<File | null>(null);
 
   const form = useForm<AnalyzeFormValues>({
     resolver: zodResolver(analyzeSchema),
     defaultValues: {
-      jobInput: jobDescription
+      jobInput: jobDescription,
+      resumeText
     }
   });
 
   const handleFileChange = (file: File | null) => {
     if (!file) {
       setUploadedFile(null);
+      setUploadedPdf(null);
       return;
     }
 
@@ -54,10 +61,12 @@ export function AnalyzeWorkspace() {
       file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
     if (!isPdf) {
       setUploadedFile(null);
+      setUploadedPdf(null);
       toast.error("Only PDF files are supported", "Upload a valid .pdf resume file.");
       return;
     }
 
+    setUploadedPdf(file);
     setUploadedFile({
       name: file.name,
       size: file.size,
@@ -72,17 +81,45 @@ export function AnalyzeWorkspace() {
       return;
     }
 
-    setJobDescription(values.jobInput);
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
     try {
+      let effectiveResumeText = values.resumeText?.trim() || "";
+
+      if (!effectiveResumeText && uploadedPdf) {
+        const extractedText = await extractTextFromPdfFile(uploadedPdf);
+        if (extractedText.length > 60) {
+          effectiveResumeText = extractedText;
+          form.setValue("resumeText", extractedText, {
+            shouldDirty: true
+          });
+          toast.info(
+            "Resume text extracted",
+            "Basic PDF text extraction was used for AI analysis."
+          );
+        }
+      }
+
       const result = await resumeAnalyzerService.analyze({
-        fileName: uploadedFile.name,
-        jobDescription: values.jobInput
+        jobInput: values.jobInput,
+        resumeText: effectiveResumeText,
+        resumeFileName: uploadedFile.name
       });
-      setAnalysisResult(result);
-      toast.success("Analysis completed", "Mock ATS analysis is ready.");
+
+      setJobDescription(result.jobDescription);
+      setResumeText(effectiveResumeText);
+      setAnalysisResult(result.analysisResult);
+
+      const modeLabel = result.source === "ai" ? "AI analysis completed" : "Fallback analysis completed";
+      toast.success(modeLabel, "Resume and JD fit insights are ready.");
+
+      if (result.warning) {
+        toast.info("Optimization note", result.warning);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to analyze resume.";
+      toast.error("Analysis failed", message);
     } finally {
       setIsAnalyzing(false);
     }
@@ -125,7 +162,7 @@ export function AnalyzeWorkspace() {
             <Textarea
               id="jobInput"
               placeholder="Paste job description or add a job URL with role requirements..."
-              className="min-h-[220px]"
+              className="min-h-[160px]"
               {...form.register("jobInput")}
             />
             {form.formState.errors.jobInput ? (
@@ -133,6 +170,15 @@ export function AnalyzeWorkspace() {
                 {form.formState.errors.jobInput.message}
               </p>
             ) : null}
+            <Label htmlFor="resumeText" className="pt-2">
+              Resume Text (optional, improves AI quality)
+            </Label>
+            <Textarea
+              id="resumeText"
+              placeholder="Paste your resume text here for more accurate AI analysis."
+              className="min-h-[130px]"
+              {...form.register("resumeText")}
+            />
             <Button
               type="submit"
               className="mt-3 w-full gap-2"

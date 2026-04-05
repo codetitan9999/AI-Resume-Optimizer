@@ -1,24 +1,42 @@
-import { generateMockAnalysis } from "@/lib/mock-data";
 import { AnalysisResult } from "@/types/analysis";
 
 export type AnalyzeResumeInput = {
-  fileName: string;
+  jobInput: string;
+  resumeText?: string;
+  resumeFileName?: string;
+};
+
+export type AnalyzeResumeOutput = {
+  analysisResult: AnalysisResult;
+  source: "ai" | "mock";
+  warning?: string;
+  jobDescriptionSource: "url" | "text";
   jobDescription: string;
+  jobUrl?: string;
 };
 
 export interface ResumeAnalyzerService {
-  analyze(input: AnalyzeResumeInput): Promise<AnalysisResult>;
+  analyze(input: AnalyzeResumeInput): Promise<AnalyzeResumeOutput>;
 }
 
-class MockResumeAnalyzerService implements ResumeAnalyzerService {
-  async analyze(input: AnalyzeResumeInput): Promise<AnalysisResult> {
-    await new Promise((resolve) => {
-      setTimeout(resolve, 2000);
+class ApiResumeAnalyzerService implements ResumeAnalyzerService {
+  async analyze(input: AnalyzeResumeInput): Promise<AnalyzeResumeOutput> {
+    const response = await fetch("/api/analyze", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(input)
     });
 
-    return generateMockAnalysis(`${input.fileName}::${input.jobDescription}`);
+    if (!response.ok) {
+      const payload = (await response.json()) as { message?: string };
+      throw new Error(payload.message ?? "Failed to analyze resume.");
+    }
+
+    return (await response.json()) as AnalyzeResumeOutput;
   }
 }
 
 export const resumeAnalyzerService: ResumeAnalyzerService =
-  new MockResumeAnalyzerService();
+  new ApiResumeAnalyzerService();

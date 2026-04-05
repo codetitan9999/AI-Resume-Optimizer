@@ -1,6 +1,9 @@
 import { ResumeBuilderWorkspace } from "@/components/resume/resume-builder-workspace";
+import { requireActiveSubscription } from "@/lib/server/auth/guards";
 
-export default function BuilderPage() {
+export default async function BuilderPage() {
+  await requireActiveSubscription("/builder");
+
   return (
     <div className="space-y-4">
       <div>

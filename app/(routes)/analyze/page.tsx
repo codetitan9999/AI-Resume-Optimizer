@@ -1,6 +1,9 @@
 import { AnalyzeWorkspace } from "@/components/resume/analyze-workspace";
+import { requireActiveSubscription } from "@/lib/server/auth/guards";
 
-export default function AnalyzePage() {
+export default async function AnalyzePage() {
+  await requireActiveSubscription("/analyze");
+
   return (
     <div className="space-y-4">
       <div>

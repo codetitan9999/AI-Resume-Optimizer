@@ -75,63 +75,128 @@ export function generateMockAnalysis(jobInput: string): AnalysisResult {
   };
 }
 
-export const optimizationSections: OptimizationSection[] = [
-  {
-    id: "summary",
-    title: "Summary Suggestions",
-    suggestions: [
-      {
-        id: "summary-1",
-        original:
-          "Full-stack developer with 5 years of experience building web apps.",
-        optimized:
-          "Product-focused full-stack engineer with 5+ years delivering revenue-impacting SaaS features across React, Next.js, and cloud-native services."
-      }
-    ]
-  },
-  {
-    id: "experience",
-    title: "Experience Bullet Rewrite Suggestions",
-    suggestions: [
-      {
-        id: "exp-1",
-        original: "Worked on dashboard performance improvements.",
-        optimized:
-          "Improved dashboard load performance by 41% by introducing route-level code splitting and optimizing API response payloads."
-      },
-      {
-        id: "exp-2",
-        original: "Led a migration to newer frontend architecture.",
-        optimized:
-          "Led migration from legacy SPA to Next.js App Router, reducing release regression incidents by 32% and accelerating delivery cadence."
-      }
-    ]
-  },
-  {
-    id: "skills",
-    title: "Skills Improvement Suggestions",
-    suggestions: [
-      {
-        id: "skills-1",
-        original: "JavaScript, React, APIs",
-        optimized:
-          "TypeScript, React, Next.js, REST/GraphQL APIs, React Hook Form, Zod, Jest, Playwright"
-      }
-    ]
-  },
-  {
-    id: "keywords",
-    title: "Keyword Additions",
-    suggestions: [
-      {
-        id: "kw-1",
-        original: "Missing ATS terms: CI/CD, system design",
-        optimized:
-          "Add ATS-aligned terms: CI/CD pipelines, distributed system design, cloud cost optimization, incident response"
-      }
-    ]
+const keywordFromText = (text: string) =>
+  text
+    .toLowerCase()
+    .split(/[^a-z0-9+#.]+/g)
+    .map((value) => value.trim())
+    .filter((value) => value.length > 2);
+
+const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
+
+const inferJobKeywords = (jobDescription?: string) => {
+  if (!jobDescription) {
+    return ["CI/CD", "System design", "Cloud platforms", "Testing"];
   }
-];
+
+  const rawTokens = keywordFromText(jobDescription);
+  const prioritized = ["typescript", "react", "next.js", "node", "aws", "docker", "kubernetes"];
+  const selected = prioritized.filter((token) => rawTokens.includes(token));
+  const fallback = rawTokens.slice(0, 6).map(titleCase);
+  const merged = [...selected.map(titleCase), ...fallback];
+  return Array.from(new Set(merged)).slice(0, 6);
+};
+
+export function generateMockOptimizationSections(
+  resumeData: ResumeData,
+  jobDescription?: string
+): OptimizationSection[] {
+  const firstExperience = resumeData.experience[0];
+  const firstBullet = firstExperience?.description[0] ?? "Contributed to team deliverables.";
+  const project = resumeData.projects[0];
+  const projectBullet = project?.description[0] ?? "Delivered project features.";
+  const inferredKeywords = inferJobKeywords(jobDescription);
+
+  return [
+    {
+      id: "summary",
+      title: "Summary Suggestions",
+      suggestions: [
+        {
+          id: "summary-1",
+          original: resumeData.summary,
+          optimized:
+            `${resumeData.summary} Tailored for roles requiring ${inferredKeywords
+              .slice(0, 3)
+              .join(", ")} with clear focus on measurable outcomes and cross-functional delivery.`,
+          rationale: "Aligns the summary with role-specific priorities and ATS keyword intent.",
+          confidence: 0.78,
+          target: {
+            kind: "summary"
+          }
+        }
+      ]
+    },
+    {
+      id: "experience",
+      title: "Experience Bullet Rewrite Suggestions",
+      suggestions: [
+        {
+          id: "exp-1",
+          original: firstBullet,
+          optimized:
+            `${firstBullet} Improved delivery outcomes by introducing structured execution and measurable KPI tracking.`,
+          rationale: "Shifts task-oriented language into impact-oriented accomplishments.",
+          confidence: 0.73,
+          target: {
+            kind: "experience-bullet",
+            experienceIndex: 0,
+            bulletIndex: 0
+          }
+        },
+        {
+          id: "proj-1",
+          original: projectBullet,
+          optimized:
+            `${projectBullet} Increased stakeholder visibility through clear roadmap communication and release milestones.`,
+          rationale: "Adds leadership and collaboration signal for ATS and recruiter screening.",
+          confidence: 0.69,
+          target: {
+            kind: "project-bullet",
+            projectIndex: 0,
+            bulletIndex: 0
+          }
+        }
+      ]
+    },
+    {
+      id: "skills",
+      title: "Skills Improvement Suggestions",
+      suggestions: [
+        {
+          id: "skills-1",
+          original: resumeData.skills.technical.join(", "),
+          optimized: Array.from(
+            new Set([...resumeData.skills.technical, ...inferredKeywords.slice(0, 4)])
+          ).join(", "),
+          rationale: "Boosts role alignment by blending existing skills with JD-relevant terms.",
+          confidence: 0.75,
+          target: {
+            kind: "skills",
+            category: "technical"
+          }
+        }
+      ]
+    },
+    {
+      id: "keywords",
+      title: "Keyword Additions",
+      suggestions: [
+        {
+          id: "kw-1",
+          original: "Potentially missing ATS terms",
+          optimized: inferredKeywords.join(", "),
+          rationale: "Adds terms frequently used in matching job descriptions.",
+          confidence: 0.72,
+          target: {
+            kind: "keywords",
+            category: "technical"
+          }
+        }
+      ]
+    }
+  ];
+}
 
 export const initialResumeData: ResumeData = {
   personalInfo: {
@@ -191,3 +256,7 @@ export const initialResumeData: ResumeData = {
   ],
   certifications: ["AWS Certified Cloud Practitioner"]
 };
+
+export const optimizationSections: OptimizationSection[] = generateMockOptimizationSections(
+  initialResumeData
+);

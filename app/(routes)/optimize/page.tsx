@@ -1,6 +1,9 @@
 import { OptimizationSections } from "@/components/resume/optimization-sections";
+import { requireActiveSubscription } from "@/lib/server/auth/guards";
 
-export default function OptimizePage() {
+export default async function OptimizePage() {
+  await requireActiveSubscription("/optimize");
+
   return (
     <div className="space-y-4">
       <div>

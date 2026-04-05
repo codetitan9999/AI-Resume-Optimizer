@@ -2,16 +2,19 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Printer, Trash2 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 
 import { useAppToast } from "@/hooks/use-app-toast";
+import { resumeOptimizerService } from "@/lib/services/resume-optimizer";
 import { useResumeStore } from "@/store/use-resume-store";
+import { OptimizationSuggestion } from "@/types/optimization";
 import { formValuesToResumeData, resumeDataToFormValues } from "@/utils/resume-transformers";
 import {
   ResumeBuilderFormValues,
   resumeBuilderSchema
 } from "@/utils/schemas";
+import { applyOptimizationSuggestion } from "@/utils/apply-optimization-suggestion";
 import {
   Card,
   CardContent,
@@ -24,6 +27,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ResumePreview } from "@/components/resume/resume-preview";
+import { OptimizationResultList } from "@/components/resume/optimization-result-list";
 
 const emptyExperience = {
   role: "",
@@ -64,8 +68,16 @@ function SectionTitle({ title, description }: { title: string; description?: str
 }
 
 export function ResumeBuilderWorkspace() {
-  const { resumeData, setResumeData } = useResumeStore((state) => state);
+  const {
+    resumeData,
+    optimizationSections,
+    optimizationContext,
+    setResumeData,
+    setOptimizationSections
+  } = useResumeStore((state) => state);
   const toast = useAppToast();
+  const [jobTargetInput, setJobTargetInput] = useState("");
+  const [isOptimizing, setIsOptimizing] = useState(false);
 
   const defaultValues = useMemo(() => resumeDataToFormValues(resumeData), [resumeData]);
 
@@ -92,6 +104,56 @@ export function ResumeBuilderWorkspace() {
 
   const watchedValues = form.watch() as ResumeBuilderFormValues;
   const previewData = formValuesToResumeData(watchedValues);
+
+  const runBuilderOptimization = async (mode: "general" | "jd-aligned") => {
+    try {
+      setIsOptimizing(true);
+
+      if (mode === "jd-aligned" && !jobTargetInput.trim()) {
+        toast.error("Job description required", "Add JD text or URL for alignment.");
+        return;
+      }
+
+      const result = await resumeOptimizerService.optimize({
+        resumeData: previewData,
+        mode,
+        jobInput: mode === "jd-aligned" ? jobTargetInput : ""
+      });
+
+      setOptimizationSections(result.sections, result.context);
+      toast.success(
+        result.context.source === "ai" ? "AI optimization ready" : "Fallback optimization ready",
+        "Apply suggestions to update your builder content."
+      );
+
+      if (result.warning) {
+        toast.info("Optimization note", result.warning);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to optimize resume.";
+      toast.error("Optimization failed", message);
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
+  const applySuggestionInBuilder = (
+    suggestion: OptimizationSuggestion,
+    sectionTitle: string
+  ) => {
+    if (!suggestion.target) {
+      toast.info(
+        "Manual suggestion",
+        "This recommendation has no direct form mapping and should be edited manually."
+      );
+      return;
+    }
+
+    const updatedResume = applyOptimizationSuggestion(previewData, suggestion);
+    setResumeData(updatedResume);
+    form.reset(resumeDataToFormValues(updatedResume));
+    toast.success("Suggestion applied", `${sectionTitle} updated in builder content.`);
+  };
 
   const submitHandler = form.handleSubmit(
     (values) => {
@@ -360,6 +422,60 @@ export function ResumeBuilderWorkspace() {
                 className="min-h-[90px]"
                 placeholder="One certification per line"
                 {...form.register("certifications")}
+              />
+            </section>
+
+            <section className="space-y-3 rounded-lg border border-border/80 bg-background/80 p-4">
+              <SectionTitle
+                title="AI Optimization (Phase 2)"
+                description="Optimize current form content or align it to a specific job description."
+              />
+              <div className="space-y-2">
+                <Label htmlFor="builder-jd-input">Job Description or Job URL (optional)</Label>
+                <Input
+                  id="builder-jd-input"
+                  placeholder="Paste job description text or URL for targeted alignment"
+                  value={jobTargetInput}
+                  onChange={(event) => setJobTargetInput(event.target.value)}
+                />
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    void runBuilderOptimization("general");
+                  }}
+                  disabled={isOptimizing}
+                >
+                  {isOptimizing ? "Optimizing..." : "Optimize Current Content"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    void runBuilderOptimization("jd-aligned");
+                  }}
+                  disabled={isOptimizing}
+                >
+                  Align to JD
+                </Button>
+              </div>
+              {optimizationContext ? (
+                <p className="text-xs text-muted-foreground">
+                  Last run: {optimizationContext.mode} mode using {optimizationContext.source.toUpperCase()} output
+                  {optimizationContext.jobSource ? ` (${optimizationContext.jobSource})` : ""}.
+                </p>
+              ) : null}
+              <OptimizationResultList
+                sections={optimizationSections}
+                sourceLabel={
+                  optimizationContext?.source === "ai"
+                    ? "AI"
+                    : optimizationContext
+                      ? "Mock"
+                      : undefined
+                }
+                onApplySuggestion={applySuggestionInBuilder}
               />
             </section>
 

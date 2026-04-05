@@ -55,7 +55,8 @@ export const analyzeSchema = z.object({
         return value.length >= 20;
       },
       "Provide a detailed job description (20+ chars) or a valid job URL"
-    )
+    ),
+  resumeText: z.string().trim().optional().or(z.literal(""))
 });
 
 export const resumeBuilderSchema = z.object({
