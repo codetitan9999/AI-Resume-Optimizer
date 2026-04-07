@@ -15,7 +15,14 @@ export async function requireAuth(nextPath: string) {
 export async function redirectIfAuthenticated(defaultPath = "/analyze") {
   const session = await getServerSession();
   if (session) {
-    redirect(defaultPath);
+    const destination =
+      defaultPath === "/analyze"
+        ? isSubscriptionActive(session.user.subscription)
+          ? "/analyze"
+          : "/billing"
+        : defaultPath;
+
+    redirect(destination);
   }
 }
 

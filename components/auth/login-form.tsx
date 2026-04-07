@@ -8,15 +8,16 @@ import { useForm } from "react-hook-form";
 
 import { useAppToast } from "@/hooks/use-app-toast";
 import { authService } from "@/lib/services/auth-service";
+import { isSubscriptionActive } from "@/utils/subscription";
 import { LoginInput, loginSchema } from "@/utils/auth-schemas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-function resolveDestination(raw: string | null) {
+function resolveDestination(raw: string | null, hasActiveSubscription: boolean) {
   if (!raw || !raw.startsWith("/")) {
-    return "/billing";
+    return hasActiveSubscription ? "/analyze" : "/billing";
   }
 
   return raw;
@@ -37,9 +38,12 @@ export function LoginForm() {
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
-      await authService.login(values);
+      const response = await authService.login(values);
       toast.success("Welcome back", "You are now logged in.");
-      const destination = resolveDestination(searchParams.get("next"));
+      const destination = resolveDestination(
+        searchParams.get("next"),
+        isSubscriptionActive(response.user.subscription)
+      );
       router.push(destination as Route);
       router.refresh();
     } catch (error) {
