@@ -1,6 +1,16 @@
-# AI Resume Optimizer (UI-Only MVP)
+# AI Resume Optimizer
 
-Scalable frontend MVP for resume analysis, optimization suggestions, and ATS-friendly resume building.
+AI-powered resume analysis, JD alignment, resume optimization, and ATS-friendly resume building platform.
+
+## Overview
+
+AI Resume Optimizer is a full-stack SaaS-style application built with Next.js that helps users:
+
+- Analyze resumes against a job description or job URL
+- Generate AI-assisted optimization suggestions
+- Build ATS-friendly resumes with live preview
+- Sign up, log in, and persist account data in MongoDB
+- Access premium workflows through subscription-gated routes
 
 ## Live Demo
 
@@ -19,7 +29,7 @@ Scalable frontend MVP for resume analysis, optimization suggestions, and ATS-fri
 ## Routes
 
 - `/` Home landing page
-- `/analyze` Resume score + suggestions (mock analysis)
+- `/analyze` Resume score + suggestions
 - `/optimize` Resume optimization suggestion sections
 - `/builder` Resume builder with live ATS-friendly preview
 - `/billing` Subscription and payment checkout
@@ -30,7 +40,7 @@ Scalable frontend MVP for resume analysis, optimization suggestions, and ATS-fri
 
 - `app/(routes)/` Route pages
 - `components/` Reusable UI and feature components
-- `lib/` Mock data and service abstraction for future backend integration
+- `lib/` Server utilities, AI orchestration, integrations, and service abstractions
 - `store/` Zustand global state
 - `types/` Shared domain types
 - `utils/` Validation schemas and transformers
@@ -49,15 +59,16 @@ Global store tracks:
 ## Future Integration Points
 
 - `lib/services/resume-analyzer.ts`
-  - `ResumeAnalyzerService` interface for swapping mock analysis with real API.
+  - `ResumeAnalyzerService` interface for extending analysis pipelines.
 - `app/api/analyze/route.ts`
-  - Phase 2 AI-backed (with safe mock fallback) analysis endpoint.
+  - AI-backed analysis endpoint with safe fallback behavior.
 - `app/api/optimize/route.ts`
-  - Phase 2 AI-backed (with safe mock fallback) optimization endpoint.
+  - AI-backed optimization endpoint with safe fallback behavior.
 - Planned additions:
   - PDF parsing pipeline
-  - Auth and payments
-  - Backend persistence APIs
+  - Production payment verification hardening
+  - Deeper AI personalization and scoring pipelines
+  - Admin/reporting workflows
 
 ## Phase 2 (AI + JD Alignment)
 
@@ -176,7 +187,9 @@ You can copy env defaults from `.env.example`.
 
 ## Notes
 
-- This MVP intentionally uses mock structured data and no backend.
+- The app already includes backend routes for AI orchestration, authentication, subscriptions, and MongoDB persistence.
+- AI flows currently support safe fallback responses when external model configuration is unavailable.
+- Payment bypass mode can be enabled for testing environments while Razorpay production setup is being finalized.
 - `Export as PDF` currently uses browser print (`window.print`).
 
 ## Deploy to Vercel
@@ -210,5 +223,5 @@ You can copy env defaults from `.env.example`.
 ### Node Runtime
 
 - Project pins Node with:
-  - `.nvmrc`: `22`
-  - `package.json > engines.node`: `>=18.18 <23`
+  - `.nvmrc`: `20`
+  - `package.json > engines.node`: `20.x`
