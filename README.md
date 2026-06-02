@@ -1,227 +1,180 @@
 # AI Resume Optimizer
 
-AI-powered resume analysis, JD alignment, resume optimization, and ATS-friendly resume building platform.
+AI Resume Optimizer is a full-stack SaaS-style web application for resume analysis, job-description alignment, ATS-friendly resume building, subscription-based access control, and AI-assisted content optimization.
 
-## Overview
+## Live Application
 
-AI Resume Optimizer is a full-stack SaaS-style application built with Next.js that helps users:
+- Production URL: [https://ai-resume-optimizer-for-top-companies.vercel.app/](https://ai-resume-optimizer-for-top-companies.vercel.app/)
+- Repository: [https://github.com/codetitan9999/AI-Resume-Optimizer](https://github.com/codetitan9999/AI-Resume-Optimizer)
 
-- Analyze resumes against a job description or job URL
-- Generate AI-assisted optimization suggestions
-- Build ATS-friendly resumes with live preview
-- Sign up, log in, and persist account data in MongoDB
-- Access premium workflows through subscription-gated routes
+## What The Product Does
 
-## Live Demo
+- Analyzes a resume against a pasted job description or a public job URL
+- Generates ATS-focused match scoring, keyword coverage, strengths, and gaps
+- Optimizes resume content using live AI output aligned to either general ATS best practices or a target JD
+- Provides an ATS-friendly resume builder with live preview and browser-print PDF export
+- Supports user authentication, MongoDB-backed account persistence, and subscription-gated premium workflows
+- Includes a billing interface with Razorpay integration hooks and a configurable bypass mode for demo/test environments
 
-- Live app: [https://ai-resume-optimizer-for-top-companies.vercel.app/](https://ai-resume-optimizer-for-top-companies.vercel.app/)
+## Core Capabilities
+
+### 1. Resume Analysis
+- Upload a PDF resume on `/analyze`
+- Paste JD text or a job URL
+- Extract resume text locally when possible
+- Generate ATS-oriented score, shortlisting probability, strengths, weaknesses, and keyword gaps
+
+### 2. Resume Optimization
+- Optimize builder resume content on `/optimize`
+- Run either general optimization or JD-aligned optimization
+- Apply AI suggestions back into the in-memory resume model when a suggestion has a reliable field mapping
+
+### 3. Resume Builder
+- Create a structured resume on `/builder`
+- Edit personal info, summary, experience, projects, skills, education, and certifications
+- Preview the final resume in a single-column ATS-friendly layout
+- Export through browser print/PDF
+
+### 4. Authentication And Access Control
+- Sign up, log in, log out, and restore sessions from secure HTTP-only cookies
+- Persist user accounts in MongoDB
+- Protect premium routes using subscription-aware route guards
+
+### 5. Subscription And Billing
+- Support day, monthly, and yearly plans
+- Store active subscription state inside the user record
+- Record verified Razorpay payments in MongoDB
+- Run hosted demos safely through `PAYMENT_BYPASS_MODE=true`
+
+## Current Runtime Status
+
+- Live AI is enabled and Gemini is the default provider.
+- Resume analysis supports a safe fallback response if the AI provider is unavailable or returns invalid structured output.
+- Resume optimization is configured to require a valid live AI response instead of silently showing mock content.
+- Hosted billing is currently documented and supported in demo bypass mode unless real Razorpay credentials are configured.
+- User auth, MongoDB connectivity, subscription gating, and Vercel deployment are working end to end.
 
 ## Tech Stack
 
 - Next.js 14 (App Router)
 - TypeScript
 - Tailwind CSS
-- ShadCN-style UI components
-- React Hook Form + Zod validation
-- Zustand state management
-- Sonner toast notifications
+- ShadCN-style component architecture
+- React Hook Form
+- Zod
+- Zustand
+- MongoDB Atlas
+- Gemini API / OpenAI API (provider-switchable)
+- Razorpay integration hooks
+- Vercel deployment
 
-## Routes
+## Project Structure
 
-- `/` Home landing page
-- `/analyze` Resume score + suggestions
-- `/optimize` Resume optimization suggestion sections
-- `/builder` Resume builder with live ATS-friendly preview
-- `/billing` Subscription and payment checkout
-- `/login` Auth login
-- `/signup` Auth signup
-
-## Architecture
-
-- `app/(routes)/` Route pages
-- `components/` Reusable UI and feature components
-- `lib/` Server utilities, AI orchestration, integrations, and service abstractions
-- `store/` Zustand global state
-- `types/` Shared domain types
-- `utils/` Validation schemas and transformers
-- `hooks/` Reusable hooks
-
-## State Model (Zustand)
-
-Global store tracks:
-
-- Uploaded file metadata
-- Job description content
-- Analysis result data
-- Resume builder content
-- Analysis loading state
-
-## Future Integration Points
-
-- `lib/services/resume-analyzer.ts`
-  - `ResumeAnalyzerService` interface for extending analysis pipelines.
-- `app/api/analyze/route.ts`
-  - AI-backed analysis endpoint with safe fallback behavior.
-- `app/api/optimize/route.ts`
-  - AI-backed optimization endpoint with safe fallback behavior.
-- Planned additions:
-  - PDF parsing pipeline
-  - Production payment verification hardening
-  - Deeper AI personalization and scoring pipelines
-  - Admin/reporting workflows
-
-## Phase 2 (AI + JD Alignment)
-
-- Analyze route now supports:
-  - JD URL extraction (`/api/jd/extract`)
-  - Resume-to-JD scoring (`/api/analyze`)
-- Optimize route now supports:
-  - General optimization
-  - JD-aligned optimization
-  - Section-level apply mapping (`summary`, `experience`, `projects`, `skills`, `keywords`)
-
-Set environment variable for real AI output:
-
-```bash
-OPENAI_API_KEY=your_key_here
+```text
+app/                    Next.js routes, layouts, API handlers
+components/             Reusable UI and feature modules
+hooks/                  Client hooks
+lib/                    Server-side integrations and shared utilities
+store/                  Zustand application store
+types/                  Shared domain types
+utils/                  Validation, transformation, and helper logic
+docs/                   Architecture, diagrams, API docs, deployment docs
 ```
 
-Optional model override:
+## Documentation Map
+
+- [Documentation Hub](./docs/README.md)
+- [Architecture](./docs/ARCHITECTURE.md)
+- [High-Level Design](./docs/HLD.md)
+- [Low-Level Design](./docs/LLD.md)
+- [Diagram Pack](./docs/DIAGRAMS.md)
+- [API Reference](./docs/API.md)
+- [Data Model](./docs/DATA_MODEL.md)
+- [Deployment Guide](./docs/DEPLOYMENT.md)
+
+## Application Routes
+
+| Route | Purpose |
+| --- | --- |
+| `/` | Landing page |
+| `/analyze` | Resume analysis against JD |
+| `/optimize` | AI optimization suggestions |
+| `/builder` | ATS-friendly resume builder |
+| `/billing` | Plan selection and payment UI |
+| `/login` | User login |
+| `/signup` | User signup |
+
+## Environment Variables
+
+Copy from `.env.example` and set the values required for your environment.
 
 ```bash
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-2.5-flash
+
+OPENAI_API_KEY=your_openai_api_key_here
 OPENAI_MODEL=gpt-4.1-mini
-```
 
-## Phase 3 (Authentication)
-
-- Added auth routes:
-  - `GET /api/auth/session`
-  - `POST /api/auth/signup`
-  - `POST /api/auth/login`
-  - `POST /api/auth/logout`
-- Added protected app pages:
-  - `/analyze`
-  - `/optimize`
-  - `/builder`
-- Added new pages:
-  - `/login`
-  - `/signup`
-
-Set auth secret:
-
-```bash
 AUTH_SECRET=your_long_random_secret
-```
 
-Notes:
-
-- Sessions are stored in secure HTTP-only cookies.
-
-## Phase 4 (MongoDB User Storage)
-
-- Authentication user storage now uses MongoDB instead of local JSON files.
-- User lookup and creation are performed through `lib/server/auth/user-store.ts`.
-
-Environment variables:
-
-```bash
-MONGODB_URI=your_mongodb_connection_string
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-host>/<db>?retryWrites=true&w=majority
 MONGODB_DB=ai_resume_optimizer
 MONGODB_USERS_COLLECTION=users
-```
+MONGODB_PAYMENTS_COLLECTION=payments
 
-Collection/index behavior:
-
-- Users are stored in the configured collection.
-- A unique index on `email` is created automatically.
-
-## Phase 5 (Subscriptions & Payments)
-
-- Added paid subscription model using Razorpay checkout:
-  - Day pass: ₹10
-  - Monthly: ₹15
-  - Yearly: ₹100
-- Payment methods supported by Razorpay checkout include:
-  - UPI
-  - Credit cards
-  - Debit cards
-  - Net banking / wallets (as enabled in your Razorpay account)
-
-API routes:
-
-- `POST /api/payments/create-order`
-- `POST /api/payments/verify`
-- `GET /api/payments/subscription`
-
-Subscription gating:
-
-- `/analyze`, `/optimize`, and `/builder` require an active subscription.
-- Non-subscribed authenticated users are redirected to `/billing`.
-
-Payment environment variables:
-
-```bash
 RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxx
 RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxxxxxx
 PAYMENT_BYPASS_MODE=false
-MONGODB_PAYMENTS_COLLECTION=payments
 ```
 
-Local testing shortcut:
+## Local Development
 
-- Set `PAYMENT_BYPASS_MODE=true` to bypass Razorpay and activate selected plans directly from the billing UI.
+### Prerequisites
+- Node.js 20.x
+- npm 10+
+- MongoDB Atlas or another reachable MongoDB deployment
+- Gemini API key or OpenAI API key
 
-## Run Locally
+### Setup
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Start dev server:
-   ```bash
-   npm run dev
-   ```
-3. Open [http://localhost:3000](http://localhost:3000)
+```bash
+npm install
+cp .env.example .env.local
+npm run dev
+```
 
-You can copy env defaults from `.env.example`.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Notes
+## Billing Demo Mode
 
-- The app already includes backend routes for AI orchestration, authentication, subscriptions, and MongoDB persistence.
-- AI flows currently support safe fallback responses when external model configuration is unavailable.
-- Payment bypass mode can be enabled for testing environments while Razorpay production setup is being finalized.
-- `Export as PDF` currently uses browser print (`window.print`).
+If you want to demo the app without accepting real payments:
 
-## Deploy to Vercel
+```bash
+PAYMENT_BYPASS_MODE=true
+```
 
-### Option 1: Vercel Dashboard (recommended)
+Behavior in bypass mode:
+- User logs in or signs up
+- User opens `/billing`
+- User selects a plan
+- The subscription is applied immediately without a real transaction
 
-1. Push this project to GitHub/GitLab/Bitbucket.
-2. In Vercel, click **Add New Project**.
-3. Import the repository.
-4. Keep defaults:
-   - Framework Preset: `Next.js`
-   - Build Command: `next build` (auto)
-   - Output Directory: `.next` (auto)
-5. Click **Deploy**.
+## Known Constraints
 
-### Option 2: Vercel CLI
+- Uploaded resume files are not stored server-side; PDF extraction is used to improve the analysis request only.
+- Resume builder content currently lives in client state and is not persisted to MongoDB yet.
+- Job URL extraction depends on public page readability and may fail on heavily protected career sites.
+- The repository does not yet include an automated test suite.
 
-1. Install CLI:
-   ```bash
-   npm i -g vercel
-   ```
-2. From project root:
-   ```bash
-   vercel
-   ```
-3. For production deployment:
-   ```bash
-   vercel --prod
-   ```
+## Deployment
 
-### Node Runtime
+The app is designed for Vercel. Full deployment instructions, environment setup, MongoDB configuration, and billing notes are in [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
 
-- Project pins Node with:
-  - `.nvmrc`: `20`
-  - `package.json > engines.node`: `20.x`
+## Roadmap Candidates
+
+- Persist resume builder content per user
+- Add robust PDF parsing and resume import
+- Replace billing bypass with production Razorpay checkout everywhere
+- Add admin analytics and usage reporting
+- Add test coverage for API routes, auth, and AI orchestration
