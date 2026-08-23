@@ -18,6 +18,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+function hasResumeContentForOptimization(resumeData: ReturnType<typeof useResumeStore.getState>["resumeData"]) {
+  return Boolean(
+    resumeData.personalInfo.fullName.trim() &&
+      resumeData.personalInfo.email.trim() &&
+      resumeData.summary.trim() &&
+      resumeData.experience.length > 0 &&
+      resumeData.projects.length > 0 &&
+      resumeData.education.length > 0 &&
+      (resumeData.skills.technical.length > 0 ||
+        resumeData.skills.tools.length > 0 ||
+        resumeData.skills.soft.length > 0)
+  );
+}
+
 export function OptimizationSections() {
   const {
     resumeData,
@@ -30,10 +44,19 @@ export function OptimizationSections() {
   const [jobInput, setJobInput] = useState("");
   const [isOptimizing, setIsOptimizing] = useState(false);
   const toast = useAppToast();
+  const hasResumeContent = hasResumeContentForOptimization(resumeData);
 
   const runOptimization = async (mode: "general" | "jd-aligned") => {
     try {
       setIsOptimizing(true);
+
+      if (!hasResumeContent) {
+        toast.error(
+          "Resume content required",
+          "Add your actual resume details in Resume Builder before running optimization."
+        );
+        return;
+      }
 
       if (mode === "jd-aligned" && !jobInput.trim()) {
         toast.error("Job description required", "Add JD text or URL for alignment mode.");
@@ -89,6 +112,13 @@ export function OptimizationSections() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {!hasResumeContent ? (
+            <div className="rounded-lg border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">
+              This page uses your saved resume builder content. Add your actual
+              resume details in Resume Builder first, then return here to run AI
+              optimization.
+            </div>
+          ) : null}
           <div className="space-y-2">
             <Label htmlFor="opt-job-input">Job Description or Job URL (optional)</Label>
             <Input
@@ -103,7 +133,7 @@ export function OptimizationSections() {
               onClick={() => {
                 void runOptimization("general");
               }}
-              disabled={isOptimizing}
+              disabled={isOptimizing || !hasResumeContent}
             >
               {isOptimizing ? "Optimizing..." : "Optimize Resume Content"}
             </Button>
@@ -112,7 +142,7 @@ export function OptimizationSections() {
               onClick={() => {
                 void runOptimization("jd-aligned");
               }}
-              disabled={isOptimizing}
+              disabled={isOptimizing || !hasResumeContent}
             >
               Align Resume to JD
             </Button>

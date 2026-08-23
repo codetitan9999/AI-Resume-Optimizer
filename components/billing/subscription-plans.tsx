@@ -185,14 +185,24 @@ export function SubscriptionPlans({ nextPath }: { nextPath?: string }) {
         <CardHeader>
           <CardTitle>Subscription Status</CardTitle>
           <CardDescription>
-            Pay to unlock resume analysis, optimization, and builder workflows.
+            Unlock resume analysis, optimization, and builder workflows.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           {paymentBypassEnabled ? (
-            <p className="text-amber-600">
-              Payment bypass mode is enabled for local testing.
-            </p>
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-amber-950 dark:text-amber-100">
+              <p className="font-medium">Demo Billing Mode Enabled</p>
+              <p className="mt-1 text-sm text-amber-900/80 dark:text-amber-100/80">
+                This deployment is currently using payment bypass mode. Users can
+                activate a subscription without being charged.
+              </p>
+              <div className="mt-3 space-y-1 text-sm text-amber-900/80 dark:text-amber-100/80">
+                <p>How it works:</p>
+                <p>1. Choose any plan below.</p>
+                <p>2. Click the activate button.</p>
+                <p>3. The subscription is applied instantly with no real payment.</p>
+              </div>
+            </div>
           ) : null}
           <p>
             Current status:{" "}
@@ -233,7 +243,7 @@ export function SubscriptionPlans({ nextPath }: { nextPath?: string }) {
                 {loadingPlanId === plan.id
                   ? "Processing..."
                   : paymentBypassEnabled
-                    ? `Activate ${plan.label}`
+                    ? `Activate ${plan.label} (Demo)`
                     : `Subscribe ${plan.label}`}
               </Button>
             </CardContent>

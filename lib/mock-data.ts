@@ -200,61 +200,23 @@ export function generateMockOptimizationSections(
 
 export const initialResumeData: ResumeData = {
   personalInfo: {
-    fullName: "Alex Morgan",
-    email: "alex.morgan@email.com",
-    phone: "+1 (555) 000-1212",
-    location: "San Francisco, CA",
-    linkedin: "linkedin.com/in/alexmorgan",
-    website: "alexmorgan.dev"
+    fullName: "",
+    email: "",
+    phone: "",
+    location: "",
+    linkedin: "",
+    website: ""
   },
-  summary:
-    "Results-driven software engineer with 5+ years of experience building customer-facing SaaS products and scalable internal platforms.",
-  experience: [
-    {
-      id: "exp-1",
-      role: "Senior Software Engineer",
-      company: "North Peak Labs",
-      location: "Remote",
-      startDate: "Jan 2022",
-      endDate: "Present",
-      description: [
-        "Led delivery of workflow automation features used by 45K+ active users.",
-        "Reduced page load time by 38% through data-fetching and rendering optimizations.",
-        "Partnered with product and design to define quarterly roadmap outcomes."
-      ]
-    }
-  ],
-  projects: [
-    {
-      id: "proj-1",
-      name: "Hiring Analytics Platform",
-      techStack: "Next.js, TypeScript, PostgreSQL",
-      startDate: "2023",
-      endDate: "2024",
-      link: "https://example.com",
-      description: [
-        "Designed analytics workflows for recruiter funnel tracking.",
-        "Implemented reusable chart components and role-based dashboard views."
-      ]
-    }
-  ],
+  summary: "",
+  experience: [],
+  projects: [],
   skills: {
-    technical: ["TypeScript", "React", "Next.js", "Node.js", "SQL"],
-    tools: ["GitHub Actions", "Docker", "Figma"],
-    soft: ["Mentorship", "Cross-functional collaboration", "Stakeholder communication"]
+    technical: [],
+    tools: [],
+    soft: []
   },
-  education: [
-    {
-      id: "edu-1",
-      institution: "University of California",
-      degree: "B.S.",
-      field: "Computer Science",
-      startDate: "2015",
-      endDate: "2019",
-      location: "California"
-    }
-  ],
-  certifications: ["AWS Certified Cloud Practitioner"]
+  education: [],
+  certifications: []
 };
 
 export const optimizationSections: OptimizationSection[] = generateMockOptimizationSections(
