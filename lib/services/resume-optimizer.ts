@@ -2,7 +2,8 @@ import { OptimizationContext, OptimizationSection } from "@/types/optimization";
 import { ResumeData } from "@/types/resume";
 
 export type OptimizeResumeInput = {
-  resumeData: ResumeData;
+  resumeData?: ResumeData;
+  resumeText?: string;
   jobInput?: string;
   mode?: "general" | "jd-aligned";
 };

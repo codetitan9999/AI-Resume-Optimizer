@@ -30,6 +30,7 @@ export async function POST(request: Request) {
 
     const result = await optimizeResumeWithAI({
       resumeData: payload.resumeData,
+      resumeText: payload.resumeText,
       jobDescription: resolvedJob?.jobDescription,
       mode
     });
@@ -39,6 +40,7 @@ export async function POST(request: Request) {
       context: {
         source: result.source,
         mode,
+        resumeSource: payload.resumeText ? "analyzed" : "builder",
         jobDescription: resolvedJob?.jobDescription,
         jobSource: resolvedJob?.source,
         jobUrl: resolvedJob?.jobUrl

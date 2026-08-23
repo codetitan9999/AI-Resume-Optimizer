@@ -327,8 +327,12 @@ function inferBulletIndex(
 function normalizeOptimizationTarget(
   value: unknown,
   original: string,
-  resumeData: ResumeData
+  resumeData?: ResumeData
 ) {
+  if (!resumeData) {
+    return undefined;
+  }
+
   if (!value || typeof value !== "object") {
     return undefined;
   }
@@ -419,7 +423,7 @@ function normalizeOptimizationTarget(
   return undefined;
 }
 
-function normalizeOptimizationOutput(value: unknown, resumeData: ResumeData) {
+function normalizeOptimizationOutput(value: unknown, resumeData?: ResumeData) {
   if (!value || typeof value !== "object") {
     return value;
   }
@@ -519,14 +523,35 @@ export async function analyzeResumeWithAI(input: {
 }
 
 export async function optimizeResumeWithAI(input: {
-  resumeData: ResumeData;
+  resumeData?: ResumeData;
+  resumeText?: string;
   jobDescription?: string;
   mode: "general" | "jd-aligned";
 }) {
-  const fallbackSections = generateMockOptimizationSections(
-    input.resumeData,
-    input.jobDescription
-  );
+  const rawResumeText = input.resumeText?.trim();
+
+  if (!input.resumeData && !rawResumeText) {
+    throw new Error("Resume content is required for optimization.");
+  }
+
+  const fallbackSections = input.resumeData
+    ? generateMockOptimizationSections(input.resumeData, input.jobDescription)
+    : [];
+
+  const resumeContent = input.resumeData
+    ? serializeResumeForPrompt(input.resumeData)
+    : rawResumeText;
+
+  const targetGuidance = input.resumeData
+    ? [
+        "Target mapping guidance:",
+        "- summary -> { kind: 'summary' }",
+        "- experience bullet -> { kind: 'experience-bullet', experienceIndex, bulletIndex }",
+        "- project bullet -> { kind: 'project-bullet', projectIndex, bulletIndex }",
+        "- skills -> { kind: 'skills', category }",
+        "- keyword addition -> { kind: 'keywords', category }"
+      ].join("\n")
+    : "The resume source is extracted PDF text. Omit target objects because builder field indexes are unavailable.";
 
   const result = await generateStructuredJson({
     schema: optimizationOutputSchema,
@@ -541,14 +566,9 @@ export async function optimizeResumeWithAI(input: {
       "Never invent companies, dates, metrics, technologies, or results.",
       "Focus on improving wording, structure, and JD alignment.",
       "Create sections with IDs: summary, experience, skills, keywords.",
-      "Target mapping guidance:",
-      "- summary -> { kind: 'summary' }",
-      "- experience bullet -> { kind: 'experience-bullet', experienceIndex, bulletIndex }",
-      "- project bullet -> { kind: 'project-bullet', projectIndex, bulletIndex }",
-      "- skills -> { kind: 'skills', category }",
-      "- keyword addition -> { kind: 'keywords', category }",
-      "\nResume data:",
-      serializeResumeForPrompt(input.resumeData),
+      targetGuidance,
+      "\nResume content:",
+      resumeContent,
       "\nJob description:",
       input.jobDescription ?? "Not provided. Perform general ATS optimization."
     ].join("\n")

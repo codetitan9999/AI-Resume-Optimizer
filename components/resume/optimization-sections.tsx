@@ -15,25 +15,15 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-
-function hasResumeContentForOptimization(resumeData: ReturnType<typeof useResumeStore.getState>["resumeData"]) {
-  return Boolean(
-    resumeData.personalInfo.fullName.trim() &&
-      resumeData.personalInfo.email.trim() &&
-      resumeData.summary.trim() &&
-      resumeData.experience.length > 0 &&
-      resumeData.projects.length > 0 &&
-      resumeData.education.length > 0 &&
-      (resumeData.skills.technical.length > 0 ||
-        resumeData.skills.tools.length > 0 ||
-        resumeData.skills.soft.length > 0)
-  );
-}
+import { resumeDataSchema } from "@/utils/api-schemas";
 
 export function OptimizationSections() {
   const {
+    uploadedFile,
+    jobDescription,
+    resumeText,
     resumeData,
     optimizationSections,
     optimizationContext,
@@ -41,19 +31,26 @@ export function OptimizationSections() {
     applySuggestionToResume
   } = useResumeStore((state) => state);
 
-  const [jobInput, setJobInput] = useState("");
+  const [jobInput, setJobInput] = useState(jobDescription);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const toast = useAppToast();
-  const hasResumeContent = hasResumeContentForOptimization(resumeData);
+  const analyzedResumeText = resumeText.trim();
+  const hasAnalyzedResume = analyzedResumeText.length >= 60;
+  const hasBuilderResume = resumeDataSchema.safeParse(resumeData).success;
+  const resumeSource = hasAnalyzedResume
+    ? "analyzed"
+    : hasBuilderResume
+      ? "builder"
+      : null;
 
   const runOptimization = async (mode: "general" | "jd-aligned") => {
     try {
       setIsOptimizing(true);
 
-      if (!hasResumeContent) {
+      if (!resumeSource) {
         toast.error(
           "Resume content required",
-          "Add your actual resume details in Resume Builder before running optimization."
+          "Analyze a resume PDF or add valid content in Resume Builder before running optimization."
         );
         return;
       }
@@ -64,7 +61,8 @@ export function OptimizationSections() {
       }
 
       const result = await resumeOptimizerService.optimize({
-        resumeData,
+        resumeData: resumeSource === "builder" ? resumeData : undefined,
+        resumeText: resumeSource === "analyzed" ? analyzedResumeText : undefined,
         mode,
         jobInput: mode === "jd-aligned" ? jobInput : ""
       });
@@ -86,15 +84,20 @@ export function OptimizationSections() {
     }
   };
 
-  const handleApplySuggestion = (
+  const handleApplySuggestion = async (
     suggestion: OptimizationSuggestion,
     sectionTitle: string
   ) => {
     if (!suggestion.target) {
-      toast.info(
-        "Manual suggestion",
-        "This recommendation has no direct mapping and should be applied manually."
-      );
+      try {
+        await navigator.clipboard.writeText(suggestion.optimized);
+        toast.success(
+          "Optimized text copied",
+          `${sectionTitle} suggestion is ready to paste into your resume.`
+        );
+      } catch {
+        toast.error("Copy failed", "Select and copy the optimized text manually.");
+      }
       return;
     }
 
@@ -112,18 +115,28 @@ export function OptimizationSections() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!hasResumeContent ? (
-            <div className="rounded-lg border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">
-              This page uses your saved resume builder content. Add your actual
-              resume details in Resume Builder first, then return here to run AI
-              optimization.
+          {resumeSource === "analyzed" ? (
+            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-foreground">
+              Using extracted content from your analyzed resume
+              {uploadedFile?.name ? ` (${uploadedFile.name})` : ""}. AI suggestions
+              will be generated from this resume, not placeholder data.
             </div>
-          ) : null}
+          ) : resumeSource === "builder" ? (
+            <div className="rounded-lg border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">
+              Using your saved Resume Builder content for optimization.
+            </div>
+          ) : (
+            <div className="rounded-lg border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">
+              Analyze a resume PDF or add your resume details in Resume Builder,
+              then return here to run AI optimization.
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="opt-job-input">Job Description or Job URL (optional)</Label>
-            <Input
+            <Textarea
               id="opt-job-input"
               placeholder="Paste job description text or URL for targeted alignment"
+              className="min-h-[120px]"
               value={jobInput}
               onChange={(event) => setJobInput(event.target.value)}
             />
@@ -133,7 +146,7 @@ export function OptimizationSections() {
               onClick={() => {
                 void runOptimization("general");
               }}
-              disabled={isOptimizing || !hasResumeContent}
+              disabled={isOptimizing || !resumeSource}
             >
               {isOptimizing ? "Optimizing..." : "Optimize Resume Content"}
             </Button>
@@ -142,7 +155,7 @@ export function OptimizationSections() {
               onClick={() => {
                 void runOptimization("jd-aligned");
               }}
-              disabled={isOptimizing || !hasResumeContent}
+              disabled={isOptimizing || !resumeSource}
             >
               Align Resume to JD
             </Button>
@@ -150,6 +163,9 @@ export function OptimizationSections() {
           {optimizationContext ? (
             <p className="text-xs text-muted-foreground">
               Last run: {optimizationContext.mode} mode using {optimizationContext.source.toUpperCase()} output
+              {optimizationContext.resumeSource
+                ? ` from ${optimizationContext.resumeSource} resume content`
+                : ""}
               {optimizationContext.jobSource ? ` (${optimizationContext.jobSource})` : ""}.
             </p>
           ) : null}

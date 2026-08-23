@@ -79,7 +79,7 @@ export function OptimizationResultList({
                     size="sm"
                     onClick={() => onApplySuggestion(suggestion, section.title)}
                   >
-                    Apply Suggestion
+                    {suggestion.target ? "Apply Suggestion" : "Copy Optimized Text"}
                   </Button>
                 ) : null}
               </div>

@@ -39,6 +39,7 @@ export type OptimizationTarget =
 export type OptimizationContext = {
   source: "ai" | "mock";
   mode: "general" | "jd-aligned";
+  resumeSource?: "analyzed" | "builder";
   jobDescription?: string;
   jobSource?: "url" | "text";
   jobUrl?: string;

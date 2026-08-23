@@ -54,6 +54,9 @@ export function AnalyzeWorkspace() {
     if (!file) {
       setUploadedFile(null);
       setUploadedPdf(null);
+      setResumeText("");
+      setAnalysisResult(null);
+      form.setValue("resumeText", "");
       return;
     }
 
@@ -67,6 +70,9 @@ export function AnalyzeWorkspace() {
     }
 
     setUploadedPdf(file);
+    setResumeText("");
+    setAnalysisResult(null);
+    form.setValue("resumeText", "");
     setUploadedFile({
       name: file.name,
       size: file.size,
@@ -99,6 +105,12 @@ export function AnalyzeWorkspace() {
             "Basic PDF text extraction was used for AI analysis."
           );
         }
+      }
+
+      if (effectiveResumeText.length < 60) {
+        throw new Error(
+          "We could not extract enough text from this PDF. Paste your resume text in the Resume Text field and try again."
+        );
       }
 
       const result = await resumeAnalyzerService.analyze({
@@ -171,11 +183,11 @@ export function AnalyzeWorkspace() {
               </p>
             ) : null}
             <Label htmlFor="resumeText" className="pt-2">
-              Resume Text (optional, improves AI quality)
+              Resume Text (auto-extracted from PDF)
             </Label>
             <Textarea
               id="resumeText"
-              placeholder="Paste your resume text here for more accurate AI analysis."
+              placeholder="PDF text appears here after extraction. If extraction fails, paste your resume text here."
               className="min-h-[130px]"
               {...form.register("resumeText")}
             />

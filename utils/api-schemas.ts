@@ -60,15 +60,27 @@ export const jobInputSchema = z
 
 export const analyzeApiRequestSchema = z.object({
   jobInput: jobInputSchema,
-  resumeText: z.string().trim().optional().or(z.literal("")),
+  resumeText: z
+    .string()
+    .trim()
+    .min(
+      60,
+      "Resume text could not be extracted. Paste the resume text and try again."
+    ),
   resumeFileName: z.string().trim().optional().or(z.literal(""))
 });
 
-export const optimizeApiRequestSchema = z.object({
-  resumeData: resumeDataSchema,
-  jobInput: z.string().trim().optional().or(z.literal("")),
-  mode: z.enum(["general", "jd-aligned"]).optional().default("general")
-});
+export const optimizeApiRequestSchema = z
+  .object({
+    resumeData: resumeDataSchema.optional(),
+    resumeText: z.string().trim().optional().or(z.literal("")),
+    jobInput: z.string().trim().optional().or(z.literal("")),
+    mode: z.enum(["general", "jd-aligned"]).optional().default("general")
+  })
+  .refine(
+    (value) => Boolean(value.resumeData || value.resumeText?.trim()),
+    "Provide analyzed resume text or Resume Builder content."
+  );
 
 export const jdExtractApiRequestSchema = z.object({
   jobInput: jobInputSchema
